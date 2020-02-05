@@ -6,15 +6,15 @@ import "../src/css/health_dash_styles.css";
 
 var globalNumOfFetch =0;
 var globalAppTag ="all";
-var globalHealthTag ="bad";//default bad health to render only problematic nodes on load,later you can select any
-var globalApplicationNames =[];
+var globalHealthTag = "bad";//default bad health to render only problematic nodes on load,later you can select any
+var globalApplicationNames = [];
+var healthTagList =["all","bad","good","exited"];
 
 var offSetVar ={
   top: 0,
   left : -10
 }
 
-var user ="GOD";
 const treeNodeStyle ={
   color: "Black",
   height : "100%",//"180px",
@@ -24,7 +24,10 @@ const treeNodeStyle ={
   overflow :"auto"
 };
 
-
+const zoomExtent ={
+  min : 0.1,
+  max :5
+}
 
 const nodeSizeVar = {
   x : 220, //by this we are able to handle overlaps ,at the cost of more width of overall tree
@@ -203,9 +206,13 @@ class HealthDashBoardComponent extends React.Component {
       });
 
       app_list_var =(<select onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select>);
-
-      health_list_var =(<select onChange = {this.handleHealthFilter}><option>bad</option><option>good</option>
-      <option>exited</option><option>all</option>
+      var healthListExpectSelected =  Object.keys(healthTagList).map(function(key) {
+        var health = healthTagList[key];
+        if(health!==globalHealthTag){
+        return (<option >{health}</option>);
+        }
+    });
+      health_list_var =(<select onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
       </select>);
 
       var supTreeData = this.state.supTreeData;
@@ -236,7 +243,8 @@ class HealthDashBoardComponent extends React.Component {
         supTreeDataVar = (
           <div>
               <div id="treeWrapper2" style={{width: '200em', height: '400em'}}>
-              <Tree data-tip data-for='myTreeId' data={formattedTree} orientation="vertical" transitionDuration="0" separation={sepVar} pathFunc="diagonal" nodeSize ={nodeSizeVar}
+              <Tree data-tip data-for='myTreeId' data={formattedTree} orientation="vertical" transitionDuration="0"
+              scaleExtent ={zoomExtent} separation={sepVar} pathFunc="diagonal" nodeSize ={nodeSizeVar}
                   allowForeignObjects
                         nodeLabelComponent={{
                           render: <NodeLabel className='TreeNodeToolTip' />,
