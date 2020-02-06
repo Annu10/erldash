@@ -1,34 +1,28 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route, Link, NavLink, Switch } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import HealthDashBoardComponent from './health_dashboard'
 import Notfound from './notfound.js'
-//ReactDOM.render(<App />, document.getElementById('root'));
 
+
+//for addition of any new tool,just Add its Link and Route its new component
 const routing = (
-    <Router>
+  <Router>
     <div>
-      <h1>Butler Server DashBoard</h1>
-      <ul>
-        <li>
-          <NavLink to="/" exact activeStyle={
+      <p style ={{visibility :"hidden", width:"0px", height:"0px"}}>
+      <Link to="/" exact style={
              {color:'red'}
-          }>Home</NavLink>
-        </li>
-        <li>
-          <NavLink to="/health_dashboard" exact activeStyle={
+          }>Home</Link>
+          <Link to="/health_dashboard" exact style={
              {color:'green'}
-          }>Health DashBoard</NavLink>
-        </li>
-        <li>
-          <NavLink to="/contact" exact activeStyle={
+          }>Health DashBoard</Link>
+          <Link to="/contact" exact style={
              {color:'magenta'}
-          }>Contact</NavLink>
-        </li>
-      </ul>
+          }>Contact</Link>
+      </p>
       <Switch>
          <Route exact path="/" component={App} />
          <Route exact path="/health_dashboard" component={HealthDashBoardComponent} />
@@ -37,7 +31,6 @@ const routing = (
     </div>
   </Router>
   )
-//
 ReactDOM.render(routing, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change

@@ -6,7 +6,6 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <p>
           Welcome to Butler Server dashboard
         </p>
@@ -33,6 +32,14 @@ function App() {
           rel="noopener noreferrer"
         >
           Put Viewer
+        </a>
+        <a
+          className="App-link"
+          href="localhost:3000/notfound"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          NotFound
         </a>
       </header>
     </div>

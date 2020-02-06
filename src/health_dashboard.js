@@ -1,6 +1,9 @@
 import React from 'react'
 import Tree from 'react-d3-tree';
 import ReactTooltip from 'react-tooltip'
+import {Navbar,Nav,Form, FormControl,Dropdown} from 'react-bootstrap';
+import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import "../src/css/health_dash_styles.css";
 
@@ -9,6 +12,7 @@ var globalAppTag ="all";
 var globalHealthTag = "bad";//default bad health to render only problematic nodes on load,later you can select any
 var globalApplicationNames = [];
 var healthTagList = ["all","bad","good","exited"];
+var globalAutoRefreshSeconds = 30;
 
 var offSetVar ={
   top: 0,
@@ -95,7 +99,9 @@ const emptyTree =[{
 class HealthDashBoardComponent extends React.Component {
   constructor() {
     super();
-    this.state = { supTreeData: false ,enableQry :false, qryString : "", auto_refresh:false};
+    this.state = { supTreeData: false ,enableQry :false, qryString : "", auto_refresh:false,
+    auto_refresh_seconds : 30
+    };
     this.qryString2 = React.createRef();
     this.getHealthMonInfo = this.getHealthMonInfo.bind(this);
     this.handleAppFilter = this.handleAppFilter.bind(this);
@@ -103,6 +109,7 @@ class HealthDashBoardComponent extends React.Component {
     this.handleQryEnable = this.handleQryEnable.bind(this);
     this.handleAutoRefresh = this.handleAutoRefresh.bind(this);
     this.handleQrySubmit = this.handleQrySubmit.bind(this);
+    this.handleAutoRefreshReset = this.handleAutoRefreshReset.bind(this);
     }
 
     componentDidUpdate() {
@@ -113,6 +120,7 @@ class HealthDashBoardComponent extends React.Component {
     }
 
     getHealthMonInfo() {
+      console.log("api hit check!!! ");
       var treeData;
       //http://localhost:8181/healthmon/information
       var url = "healthmon/information";
@@ -156,20 +164,34 @@ class HealthDashBoardComponent extends React.Component {
     }
 
     handleQryEnable(){
-      //on query disable ,qryString should be cleared-DONE
+
       if(this.state.enableQry){
         this.setState({
-          qryString:  ""
+          qryString:  "",
+          enableQry:  !this.state.enableQry
         });
       }
+      else{
+        this.setState({
+          enableQry:  !this.state.enableQry
+        });
+      }
+    }
+
+    handleQrySubmit(e) {
+      if(this.state.enableQry){
+        console.log("qry was"+e.target.elements.qry.value);
       this.setState({
-        enableQry:  !this.state.enableQry
+        qryString:  e.target.elements.qry.value
       });
+      e.preventDefault();
+      }
+
     }
 
     handleAutoRefresh(){
       if(!this.state.auto_refresh){
-        this.timer = setInterval(()=> this.getHealthMonInfo(), 30*1000);//TODO seconds to be made config based or ui based
+        this.timer = setInterval(()=> this.getHealthMonInfo(), this.state.auto_refresh*1000);
       }else{
         this.timer = clearInterval(this.timer);
       }
@@ -178,11 +200,14 @@ class HealthDashBoardComponent extends React.Component {
       });
     }
 
-    handleQrySubmit(e) {
-      if(this.state.enableQry){
-        console.log("qry was"+e.target.elements.qry.value);
+    handleAutoRefreshReset(e) {
+
+      if(this.state.auto_refresh){
+        this.timer = clearInterval(this.timer);
+        this.timer = setInterval(()=> this.getHealthMonInfo(),  e.target.elements.auto_refresh_seconds.value*1000);
+      console.log("new refresh seconds was"+e.target.elements.auto_refresh_seconds.value);
       this.setState({
-        qryString:  e.target.elements.qry.value
+        auto_refresh_seconds:  e.target.elements.auto_refresh_seconds.value
       });
       e.preventDefault();
       }
@@ -198,25 +223,84 @@ class HealthDashBoardComponent extends React.Component {
         globalNumOfFetch = 2;
       }
       var appHeader;
+     var app_list_var,health_list_var;
 
-      appHeader   = (<div style ={{textAlign:"center"}}>
-                      <h2>Butler Server Health DashBoard!!!</h2>
-                      </div>);
-      var app_list_var,health_list_var;
+     var app_names_var = Object.keys(globalApplicationNames).map(function(app_name) {
+         return (<option >{app_name}</option>);
+     });
 
-      var app_names_var = Object.keys(globalApplicationNames).map(function(app_name) {
-          return (<option >{app_name}</option>);
-      });
+     app_list_var =(<Form inline>Select App:<select className="form-control" onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select></Form>);
+     var healthListExpectSelected =  Object.keys(healthTagList).map(function(key) {
+       var health = healthTagList[key];
+       if(health!==globalHealthTag){
+       return (<option >{health}</option>);
+       }
+   });
+     health_list_var =(<Form inline>Select Health:<select className="form-control"  onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
+     </select></Form>);
 
-      app_list_var =(<select onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select>);
-      var healthListExpectSelected =  Object.keys(healthTagList).map(function(key) {
-        var health = healthTagList[key];
-        if(health!==globalHealthTag){
-        return (<option >{health}</option>);
-        }
-    });
-      health_list_var =(<select onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
-      </select>);
+      appHeader   = (<div  >
+
+                      <>
+                      <Navbar fixed="top" bg="light" variant="light">
+
+                          <img
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQWAWqPmdtL6dMyCKwd1ERaMy0RNfq0mCstFd5nygEseVExLdXd"
+                            width="20"
+                            height="20"
+                            alt=""
+                          />
+
+                        {' '}
+                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health DashBoard</b></a>
+                        <ReactTooltip id='appTips' type='info' effect='solid' place ='bottom' clickable={true} delayHide={300}>
+                        <div style={{marginLeft: "35%"}}>
+                          <p>Health DashBoard Tool Tips</p>
+
+                              <li>Select App to filter tree for specific apps</li>
+                              <li>Select Health to filter tree for specific health</li>
+                              <li>Enable Query,input desired process name and hit
+                                Search Subtree to get branches of that process <br/>
+                                to get branches of that process
+                              </li>
+                              <li>
+                              disable Query to clear it
+                              </li>
+                              <li>Red Nodes indicate node or its any subtree in bad health</li>
+                              <li>Blue Nodes indicate node and all its subtrees in good health</li>
+                              <li>Rectangular nodes have children, circular nodes are leaf</li>
+                              <li>Hover on Node Name to see more details of the node</li>
+                              <li>Click on nodes to expand/collapse immediate children</li>
+                              <li>Whole Tree can be dragged & zoomed in-out</li>
+
+                            </div>
+                          </ReactTooltip></Navbar.Brand>
+   <Nav>
+                  {app_list_var}
+
+                  {health_list_var}
+
+                        <Form inline onSubmit={this.handleQrySubmit} disabled={!this.enableQry? "disabled" : false}>
+                        <input type="checkbox"
+                  checked={this.state.enableQry}
+                  ref="enableQry"
+                  onChange= {this.handleQryEnable} />Enable Query
+                          <FormControl type="text" placeholder ={this.state.qryString} name="qry"/>
+                          <FormControl  variant="outline-primary" type="submit" value="Search Subtree"/>
+                        </Form>
+                        <Form inline onSubmit={this.handleAutoRefreshReset} disabled={!this.auto_refresh? "disabled" : false}>
+                        <input  type="checkbox"
+                          checked={this.state.auto_refresh}
+                          ref="auto_refresh"
+                          onChange= {this.handleAutoRefresh} />
+                        Auto Refresh
+                          <FormControl className="form-group col-lg-3 " width ="30px"type="number" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
+                          <FormControl  variant="outline-primary" type="submit" value="Set"/>
+                          </Form>
+                        </Nav>
+                      </Navbar>
+                    </>
+                </div>);
 
       var supTreeData = this.state.supTreeData;
       var supTreeDataVar = false;
@@ -225,15 +309,15 @@ class HealthDashBoardComponent extends React.Component {
       if(supTreeData !== false){
       var rawTreeJson = convertToJson(supTreeData);
       var finalD3Tree = getEnhancedD3Tree(rawTreeJson, qryString);
-      if(finalD3Tree.length==0 || typeof finalD3Tree=="undefined"){
+      if(finalD3Tree.length==0 || typeof finalD3Tree==="undefined"){
         //empty tree result
         finalD3Tree = emptyTree;
       }
 
         supTreeDataVar = (
-          <div>
-              <div id="treeWrapper" style={{width: '200em', height: '400em'}}>
-              <Tree data-tip data-for='myTreeId' data={finalD3Tree} orientation="vertical" transitionDuration="0"
+          <div >
+              <div id="treeWrapper" style={{width: '300em', height: '250em'}}>
+              <Tree data={finalD3Tree} orientation="vertical" transitionDuration={0}
               scaleExtent ={zoomExtent} separation={sepVar} pathFunc="diagonal" nodeSize ={nodeSizeVar}
                   allowForeignObjects
                         nodeLabelComponent={{
@@ -257,51 +341,8 @@ class HealthDashBoardComponent extends React.Component {
 
     return (
       <div>
-        {appHeader}
-          <p style ={{marginLeft: "40px"}}>
-              Select App:&nbsp;&nbsp;
-                  {app_list_var}
-                &nbsp;&nbsp;
-                Select Health:&nbsp;&nbsp;
-
-                  {health_list_var}
-                  &nbsp;&nbsp;
-                  <input type="checkbox"
-                  checked={this.state.enableQry}
-                  ref="enableQry"
-                  onChange= {this.handleQryEnable} />
-                  Enable Query{'                '}
-                  <form onSubmit={this.handleQrySubmit} style={{display:"inline"}} disabled={!this.enableQry? "disabled" : false}>
-                  <input type="text" placeholder ={this.state.qryString} name="qry"/>
-                  <input type="submit" value="Search Subtree"/>
-                  </form>
-                  {'                '}
-                  <input type="checkbox"
-                  checked={this.state.auto_refresh}
-                  ref="auto_refresh"
-                  onChange= {this.handleAutoRefresh} />
-                  {''} Auto Refresh
-                  &nbsp;&nbsp;<b><a data-tip data-for='appTips'>App Tips</a></b>
-          <ReactTooltip id='appTips' type='info' effect='solid' place ='right'>
-          <p>Butler Server Health DashBoard Tool Tips</p>
-            <ul>
-              <li>Select App to filter tree for specific apps</li>
-              <li>Select Health to filter tree for specific health</li>
-              <li>Enable Query,input desired process name and hit Search Subtree to get branches of that process only
-                ,disable Query to clear it
-              </li>
-              <li>Red Nodes indicate node or its any subtree in bad health</li>
-              <li>Blue Nodes indicate node and all its subtrees in good health</li>
-              <li>Rectangular nodes have children, circular nodes are leaf</li>
-              <li>Hover on Node Name to see more details of the node</li>
-              <li>Click on nodes to expand/collapse immediate children</li>
-              <li>Whole Tree can be dragged & zoomed in-out</li>
-            </ul>
-          </ReactTooltip>
-                </p>
-
+      {appHeader}
       {supTreeDataVar}
-
       </div>
     );
   }
