@@ -8,20 +8,31 @@ var globalNumOfFetch =0;
 var globalAppTag ="all";
 var globalHealthTag = "bad";//default bad health to render only problematic nodes on load,later you can select any
 var globalApplicationNames = [];
-var healthTagList =["all","bad","good","exited"];
+var healthTagList = ["all","bad","good","exited"];
 
 var offSetVar ={
   top: 0,
-  left : -10
+  left : 0
 }
 
 const treeNodeStyle ={
   color: "Black",
-  height : "100%",//"180px",
-  width : "100%",//"200px",
+  height : "100%",
+  width : "100%",
   fontFamily: "Arial",
   textAlign : "center",
-  overflow :"auto"
+  overflow :"auto",
+};
+
+const toolTipContentStyle ={
+  color: "White",
+  height : "100%",
+  width : "100%",
+  fontFamily: "Arial",
+  overflowY :"auto",
+  top: 38,
+  zIndex : 2
+  //top: 0
 };
 
 const zoomExtent ={
@@ -30,7 +41,7 @@ const zoomExtent ={
 }
 
 const nodeSizeVar = {
-  x : 220, //by this we are able to handle overlaps ,at the cost of more width of overall tree
+  x : 220, //
   y :210//140
 }
 
@@ -39,7 +50,7 @@ const svgShapeRectBlue = {
   shapeProps: {
     width: 10,
     height: 8,
-    fill: 'blue' // "#00A86B" green here doesnt seem useful as for small node ,hard to distinguish with red
+    fill: 'blue' // "#00A86B"
   }
 }
 
@@ -71,8 +82,15 @@ const sepVar = {
   siblings: 1,
   nonSiblings: 1
 }
-//TODO will remove later
-var globalCount =0;
+
+const emptyTree =[{
+  name :"system",
+  attributes :{
+    app_name :"undefined", pid : "undefined", health :"good", node : "undefined", update_time : "", current_function : "",
+    type : "system", stack_size : "", reductions : "", total_heap_size : "", message_queue_len : "", namespace : "universal"
+  },
+  nodeSvgShape : svgShapeCircleBlue
+}]
 
 class HealthDashBoardComponent extends React.Component {
   constructor() {
@@ -94,110 +112,95 @@ class HealthDashBoardComponent extends React.Component {
       this.getHealthMonInfo();
     }
 
+    getHealthMonInfo() {
+      var treeData;
+      //http://localhost:8181/healthmon/information
+      var url = "healthmon/information";
+      if(globalAppTag !=="all"){
+        url = url +"?app="+globalAppTag;
+      }
+      if(globalHealthTag !=="all" && globalAppTag!=="all"){
+        url = url +"&health="+globalHealthTag;
+      }else if(globalHealthTag !=="all" && globalAppTag==="all"){
+        url = "healthmon/information?health="+globalHealthTag;
+      }
 
-
-     getHealthMonInfo() {
-        globalCount++;
-        var treeData;
-        //TODO have to change url on iteg
-        //http://localhost:8181/healthmon/information
-        var url = "healthmon/information";
-        if(globalAppTag !=="all"){
-          url = url +"?app="+globalAppTag;
-        }
-        if(globalHealthTag !=="all" && globalAppTag!=="all"){
-          url = url +"&health="+globalHealthTag;
-        }else if(globalHealthTag !=="all" && globalAppTag==="all"){
-          url = "healthmon/information?health="+globalHealthTag;
-
-        }
-        //var url = "api/get_health_data/"+globalAppTag+"/"+globalHealthTag;
-        console.log("url was "+url);
-        fetch(url,{mode : "no-cors", method:"GET" })
-          .then(res => res.json())
-          .then(
-            (result) => {
-              console.log("api hit success!!!"+result+" , called "+globalCount+"th time");
-              if(typeof result ==="undefined"){
-              }else{
-                treeData = JSON.stringify(result);
-                //console.log("!!!!result json NOT undefined in getHealthMonInfo within api hit and = "+treeData);
-                console.log("api result json not undefined");
-
-                console.log("testing result values "+Object.keys(result));
-                console.log("stringify version");
-              }
-              this.setState({
-                supTreeData:  treeData
-              });
-            },
-            // Note: it's important to handle errors here
-            // instead of a catch() block so that we don't swallow
-            // exceptions from actual bugs in components.
-            (error) => {
-              console.log("API ERROR");
+      fetch(url,{mode : "no-cors", method:"GET" })
+        .then(res => res.json())
+        .then(
+          (result) => {
+            if(typeof result ==="undefined"){
+            }else{
+              //stringify ensures no api timeout on large json response
+              treeData = JSON.stringify(result);
             }
-          )
+            this.setState({
+              supTreeData:  treeData
+            });
+          },
+          (error) => {
+            console.log("API ERROR");
+          }
+        )
     }
 
-      handleAppFilter(e){
-        globalAppTag = e.target.value;
-        this.getHealthMonInfo();
-      }
+    handleAppFilter(e){
+      globalAppTag = e.target.value;
+      this.getHealthMonInfo();
+    }
 
 
-      handleHealthFilter(e){
-        globalHealthTag = e.target.value;
-        this.getHealthMonInfo();
-      }
+    handleHealthFilter(e){
+      globalHealthTag = e.target.value;
+      this.getHealthMonInfo();
+    }
 
-      handleQryEnable(){
-        //on query disable ,qryString should be cleared-DONE
-        if(this.state.enableQry){
-          this.setState({
-            qryString:  ""
-          });
-        }
+    handleQryEnable(){
+      //on query disable ,qryString should be cleared-DONE
+      if(this.state.enableQry){
         this.setState({
-          enableQry:  !this.state.enableQry
+          qryString:  ""
         });
       }
+      this.setState({
+        enableQry:  !this.state.enableQry
+      });
+    }
 
-      handleAutoRefresh(){
-        if(!this.state.auto_refresh){
-          this.timer = setInterval(()=> this.getHealthMonInfo(), 30*1000);//TODO seconds to be made config based or ui based
-        }else{
-          this.timer = clearInterval(this.timer);
-        }
-        this.setState({
-          auto_refresh:  !this.state.auto_refresh
-        });
+    handleAutoRefresh(){
+      if(!this.state.auto_refresh){
+        this.timer = setInterval(()=> this.getHealthMonInfo(), 30*1000);//TODO seconds to be made config based or ui based
+      }else{
+        this.timer = clearInterval(this.timer);
+      }
+      this.setState({
+        auto_refresh:  !this.state.auto_refresh
+      });
+    }
+
+    handleQrySubmit(e) {
+      if(this.state.enableQry){
+        console.log("qry was"+e.target.elements.qry.value);
+      this.setState({
+        qryString:  e.target.elements.qry.value
+      });
+      e.preventDefault();
       }
 
-      handleQrySubmit(e) {
-        if(this.state.enableQry){
-          console.log("qry was"+e.target.elements.qry.value);
-        this.setState({
-          qryString:  e.target.elements.qry.value
-        });
-        e.preventDefault();
-        }
-
-      }
+    }
 
 
   render() {
-    //on load only, after that depending on refresh interval or filter/query etc
+      //on load only, after that depending on refresh interval or filter/query etc
       if(globalNumOfFetch<=1){
         this.getHealthMonInfo();
         getApplicationInfo();
         globalNumOfFetch = 2;
       }
-    //Working!!! calls controlled by refresh click button ,for now(TODO)
-      var welcomeMsg;
+      var appHeader;
 
-      welcomeMsg   = (<div style ={{textAlign:"center"}}>
-                      <h3>Butler Server Health DashBoard!!!</h3>
+      appHeader   = (<div style ={{textAlign:"center"}}>
+                      <h2>Butler Server Health DashBoard!!!</h2>
                       </div>);
       var app_list_var,health_list_var;
 
@@ -219,31 +222,18 @@ class HealthDashBoardComponent extends React.Component {
       var supTreeDataVar = false;
       var qryString = this.state.qryString;
 
-
-      //var newTree = getTheTree(butlerTreeJson);
-      //console.log("supTree Data now = "+supTreeData);
-      globalCount++;
-      //if(globalCount >6 && supTreeData != false){
       if(supTreeData !== false){
-      var formattedTree2 = convertToJsObject(supTreeData);
-      console.log("formatted Tree 2 ="+formattedTree2);
-      //var formattedTree = getTheTree(formattedTree2);
+      var rawTreeJson = convertToJson(supTreeData);
+      var finalD3Tree = getEnhancedD3Tree(rawTreeJson, qryString);
+      if(finalD3Tree.length==0 || typeof finalD3Tree=="undefined"){
+        //empty tree result
+        finalD3Tree = emptyTree;
+      }
 
-      //testing subtree function
-      //Worksssss
-      var formattedTree = getTheSubTree(formattedTree2, qryString);// have made its return type empty list
-      //in case no match for query,when the tree resulted was null actually
-      if(formattedTree.length==0 || typeof formattedTree=="undefined"){
-        console.log("formattedTree is undefined till now");
-        supTreeDataVar =(<div style={{textAlign:"center"}}><h2>Empty Tree for params App: {globalAppTag}&nbsp;&nbsp;
-        Health :{globalHealthTag}&nbsp;&nbsp; search query:{this.state.qryString}
-        </h2></div>);
-      }else{
-        //main code
         supTreeDataVar = (
           <div>
-              <div id="treeWrapper2" style={{width: '200em', height: '400em'}}>
-              <Tree data-tip data-for='myTreeId' data={formattedTree} orientation="vertical" transitionDuration="0"
+              <div id="treeWrapper" style={{width: '200em', height: '400em'}}>
+              <Tree data-tip data-for='myTreeId' data={finalD3Tree} orientation="vertical" transitionDuration="0"
               scaleExtent ={zoomExtent} separation={sepVar} pathFunc="diagonal" nodeSize ={nodeSizeVar}
                   allowForeignObjects
                         nodeLabelComponent={{
@@ -259,7 +249,7 @@ class HealthDashBoardComponent extends React.Component {
               </div>
           </div>
           );
-        }
+
     }
     else{
       //tree not loaded yet
@@ -267,7 +257,7 @@ class HealthDashBoardComponent extends React.Component {
 
     return (
       <div>
-        {welcomeMsg}
+        {appHeader}
           <p style ={{marginLeft: "40px"}}>
               Select App:&nbsp;&nbsp;
                   {app_list_var}
@@ -297,13 +287,15 @@ class HealthDashBoardComponent extends React.Component {
             <ul>
               <li>Select App to filter tree for specific apps</li>
               <li>Select Health to filter tree for specific health</li>
-              <li>Enable Query,and input desired process name to get branches of that process only</li>
+              <li>Enable Query,input desired process name and hit Search Subtree to get branches of that process only
+                ,disable Query to clear it
+              </li>
               <li>Red Nodes indicate node or its any subtree in bad health</li>
               <li>Blue Nodes indicate node and all its subtrees in good health</li>
               <li>Rectangular nodes have children, circular nodes are leaf</li>
-              <li>Hover on Node Name see more details of the node</li>
+              <li>Hover on Node Name to see more details of the node</li>
               <li>Click on nodes to expand/collapse immediate children</li>
-              <li>Whole Tree is draggable zoomable</li>
+              <li>Whole Tree can be dragged & zoomed in-out</li>
             </ul>
           </ReactTooltip>
                 </p>
@@ -315,75 +307,33 @@ class HealthDashBoardComponent extends React.Component {
   }
 }
 
-function convertToJsObject(str){
+function convertToJson(str){
   var result = JSON.parse(str);
   return result;
 }
 
-
-function getTheTree(InputJson){
+function getEnhancedD3Tree(InputJson, qry){
   var result =[];
-  //console.log("Object size= "+Object.length(InputJson));
   if(typeof InputJson ==="undefined"){
-    console.log("Input json  is undefined in getTheTree ");
+    result = emptyTree;
+    return result;
   }else if( InputJson ===""){
-    console.log("Input json empty  in getTheTree ");
+    result = emptyTree;
+    return result;
   }
-  else{
-    console.log("InputJSon NOT undefined in getTheTree and = "+InputJson);
-  }
-  var i=0;
-  //JSON.parse(InputJson)
   Object.keys(InputJson).forEach(function(key) {
-    i++;
-    console.log("i ="+i+" and key was "+key);
     var value = InputJson[key];
-    //thedata = value;
-    //console.log("key was "+key+ " value was "+value);
-    if(typeof value ==="undefined"){
-      console.log("value  is undefined in getTheTree ");
-    }else{
-      console.log("value NOT undefined in getTheTree and = "+value);
+    if(qry ==""){
+      result.push(transformTreeJsonToD3TreeObject(value));
     }
-    //get this child's subtree
-    result.push(transformTreeJsonToObject2(value));
-  });
-  console.log("outside input json for loop");
-  return result;
-}
-
-
-function getTheSubTree(InputJson, qry){
-  var result =[];
-  //console.log("Object size= "+Object.length(InputJson));
-  if(typeof InputJson ==="undefined"){
-    console.log("Input json  is undefined in getTheTree ");
-  }else if( InputJson ===""){
-    console.log("Input json empty  in getTheTree ");
-  }
-  else{
-    console.log("InputJSon NOT undefined in getTheTree and = "+InputJson);
-  }
-  var i= 0;
-  //JSON.parse(InputJson)
-  Object.keys(InputJson).forEach(function(key) {
-    i++;
-    console.log("i ="+i+" and key was "+key);
-    var value = InputJson[key];
-    //thedata = value;
-    //console.log("key was "+key+ " value was "+value);
-    if(typeof value ==="undefined"){
-      console.log("value  is undefined in getTheTree ");
-    }else{
-      console.log("value NOT undefined in getTheTree and = "+value);
-    }
-    //get this child's subtree
-    var resultTree = transformSubTreeJsonToObject2(value, qry);
-    if(resultTree!==null){
-    result.push(resultTree);
+    else{
+      var resultTree = transformSubTreeJsonToD3TreeObject(value, qry);
+        if(resultTree!==null){
+          result.push(resultTree);
+        }
     }
   });
-  console.log("outside input json for loop");
+
   return result;
 }
 
@@ -393,14 +343,15 @@ class NodeLabel extends React.PureComponent {
     const {className, nodeData} = this.props
     return (
       <div>
-        <TreeNodeToolTip id={nodeData.id} app_name ={nodeData.attributes.app_name} pid = {nodeData.attributes.pid}
+        <TreeNodeToolTip id={nodeData.id}
         namespace ={nodeData.attributes.namespace} type ={nodeData.attributes.type}
         health = {nodeData.attributes.health} name = {nodeData.name}
-        current_function= {nodeData.attributes.current_function}
-        reductions= {nodeData.attributes.reductions}
-        stack_size= {nodeData.attributes.stack_size}
-        total_heap_size= {nodeData.attributes.total_heap_size}
-        update_time= {nodeData.attributes.update_time}
+        current_function = {nodeData.attributes.current_function}
+        reductions = {nodeData.attributes.reductions}
+        stack_size = {nodeData.attributes.stack_size}
+        total_heap_size = {nodeData.attributes.total_heap_size}
+        update_time = {nodeData.attributes.update_time}
+        message_queue_len = {nodeData.attributes.message_queue_len}
         />
             <div style ={treeNodeStyle}>
             app_name: {nodeData.attributes.app_name}<br/>
@@ -414,7 +365,7 @@ class NodeLabel extends React.PureComponent {
 }
 
 /*
-TODO has  problem of self node update
+TODO has  problem of self node update within library
        {nodeData._children  &&
           <button onClick ={expandOrCollapseAll(nodeData)}>{nodeData._collapsed ? '+' : '-'}</button>}
 */
@@ -454,31 +405,24 @@ function collapseAllSubTree(nodeData){
 class TreeNodeToolTip extends React.Component{
   constructor(props){
     super();
-    this.state = { name: props.name ,health : props.health, pid : props.pid, id : props.id,
-    app_name : props.app_name, namespace :props.namespace, node: props.node, type :props.type,
-    current_function: props.current_function,
-    reductions: props.reductions,
-    stack_size: props.stack_size,
-    total_heap_size: props.total_heap_size,
-    update_time: props.update_time
+    this.state = { name: props.name ,health : props.health,id : props.id, namespace :props.namespace,
+    type :props.type, current_function: props.current_function, reductions: props.reductions, stack_size: props.stack_size,
+    total_heap_size: props.total_heap_size, update_time: props.update_time, message_queue_len: props.message_queue_len
     };
     }
-
 
   render() {
     var name = this.state.name;
     var health = this.state.health;
-    var pid = this.state.pid;
     var id = this.state.id;
-    var app_name = this.state.app_name;
     var namespace = this.state.namespace;
-    var node = this.state.node;
     var type = this.state.type;
-    var current_function= this.state.current_function;
+    var current_function = this.state.current_function;
     var reductions = this.state.reductions;
-    var stack_size= this.state.stack_size;
-    var total_heap_size= this.state.total_heap_size;
-    var update_time= this.state.update_time;
+    var stack_size = this.state.stack_size;
+    var total_heap_size = this.state.total_heap_size;
+    var update_time = this.state.update_time;
+    var message_queue_len = this.state.message_queue_len;
 
     var toolType ='info';
     if(health !== "good"){
@@ -488,13 +432,16 @@ class TreeNodeToolTip extends React.Component{
     <div>
       <b><p style={{textAlign: 'center'}}><a data-tip data-for={id}> {name}</a></p></b>
 
-          <ReactTooltip data-offset={offSetVar}
-          delayHide={300}  clickable ={true} type={toolType} effect='solid' place ='bottom' id={id}>
+          <ReactTooltip  data-offset={offSetVar}
+          delayHide={300}  clickable ={true} type={toolType} scrollHide ={true} effect='solid' place ='bottom' id={id}>
+          <div style ={toolTipContentStyle}>
             <li>update_time:{update_time}</li>
             <li>current_function:{current_function}</li>
             <li>type:{type} ,stack_size: {stack_size}, reductions:{reductions}</li>
             <li>total_heap_size: {total_heap_size}</li>
+            <li>message_queue_len: {message_queue_len}</li>
             <li>namespace: {namespace}</li>
+          </div>
           </ReactTooltip>
     </div>
     );
@@ -502,93 +449,37 @@ class TreeNodeToolTip extends React.Component{
 }
 
 
-//TODO : maybe remove this function and make use with overloaded function with empty string passed value
-  function transformTreeJsonToObject2(InputJson){
+  function transformTreeJsonToD3TreeObject(InputJson){
     var childrenVar =[];
+    var root =[];
     if(typeof InputJson.children !== "undefined"){
-      console.log("children was not undefined");
       Object.keys(InputJson.children).forEach(function(key) {
         var value = InputJson.children[key];
-        childrenVar.push(transformTreeJsonToObject2(value));
+        childrenVar.push(transformTreeJsonToD3TreeObject(value));
       });
     }
-
-    var attributesVar = {};
-    var colorVar = 'blue';
-    var isBadHealth = false;
-    var nameVar = InputJson.name;
-    if(typeof InputJson.attributes !== "undefined"){
-      attributesVar =  {
-        pid: InputJson.attributes.pid,
-        name: InputJson.attributes.name,
-        app_name: InputJson.attributes.app_name,
-        node: InputJson.attributes.node,
-        namespace : InputJson.attributes.namespace,
-        type: InputJson.attributes.type,
-        health: InputJson.attributes.health,
-        current_function: InputJson.attributes.current_function,
-        reductions: InputJson.attributes.reductions,
-        stack_size: InputJson.attributes.stack_size,
-        total_heap_size: InputJson.attributes.total_heap_size,
-        update_time: InputJson.attributes.update_time
-      }
-      if(InputJson.attributes.health !== "good"){
-        isBadHealth = true;
-      }
-      nameVar = InputJson.attributes.name;
-    }
-    var shapeVar;
-    if(isBadHealth && childrenVar.length !==0){
-      shapeVar = svgShapeRectRed;
-    }
-    else if(childrenVar.length ==0 && !isBadHealth){
-      shapeVar = svgShapeCircleBlue;
-    }else if(childrenVar.length ==0 && isBadHealth){
-      shapeVar = svgShapeCircleRed;
-    }
-    else{
-      shapeVar = svgShapeRectBlue;
-    }
-    var result =[];
-    if(attributesVar ===[]){
-      result = {
-        name : InputJson.name,
-        children : childrenVar
-      }
-    }else{
-      result = {
-        name : nameVar,
-        attributes : attributesVar,
-        nodeSvgShape: shapeVar,
-        children : childrenVar
-      }
-    }
-    return result;
+    root = makeD3TreeNode(InputJson, childrenVar);
+    return root;
   }
 
 
-  function transformSubTreeJsonToObject2(InputJson, qry){
+  function transformSubTreeJsonToD3TreeObject(InputJson, qry){
     var childrenVar =[];
+    var root =[];
     var isAnySubTreeRelevant = false;
     var nameVar = InputJson.name;
     var appNameVar =InputJson.attributes.app_name;
     if(typeof InputJson.children !== "undefined"){
-      console.log("children was not undefined");
       Object.keys(InputJson.children).forEach(function(key) {
         var value = InputJson.children[key];
-        //thedata = value;
-        //console.log("key was "+key+ " value was "+value);
-        //add this child subtree
-        console.log("current name var ="+nameVar+" qry = "+qry);
         if(nameVar.includes(qry) || appNameVar.includes(qry)){
-          console.log("a clear match");
-          childrenVar.push(transformTreeJsonToObject2(value));
+          //qry node found,now get all children of this node
+          childrenVar.push(transformTreeJsonToD3TreeObject(value));
           isAnySubTreeRelevant = true;
         }
         else{
-          var subTreeResult = transformSubTreeJsonToObject2(value, qry);
+          var subTreeResult = transformSubTreeJsonToD3TreeObject(value, qry);
           if(subTreeResult!==null){
-              console.log("oki here");
               childrenVar.push(subTreeResult);
               isAnySubTreeRelevant = true;
           }
@@ -598,11 +489,19 @@ class TreeNodeToolTip extends React.Component{
         }
       });
     }
+    if(nameVar.includes(qry) || isAnySubTreeRelevant || appNameVar.includes(qry)){
+      root = makeD3TreeNode(InputJson, childrenVar);
+      return root;
+    }else{
+      return null;
+    }
+  }
 
+  function makeD3TreeNode(InputJson, childrenVar){
+    var root =[];
+    var nameVar = InputJson.name;
     var attributesVar = {};
     var isBadHealth = false;
-
-
     if(typeof InputJson.attributes !== "undefined"){
       attributesVar =  {
         pid: InputJson.attributes.pid,
@@ -635,27 +534,20 @@ class TreeNodeToolTip extends React.Component{
     else{
       shapeVar = svgShapeRectBlue;
     }
-    var result =[];
     if(attributesVar ===[]){
-      result = {
+      root = {
         name : InputJson.name,
         children : childrenVar
       }
     }else{
-      result = {
+      root = {
         name : nameVar,
         attributes : attributesVar,
         nodeSvgShape: shapeVar,
         children : childrenVar
       }
-
     }
-    if(nameVar.includes(qry) || isAnySubTreeRelevant || appNameVar.includes(qry)){
-      return result;
-    }else{
-      return null;
-    }
-
+    return root;
   }
 
 
