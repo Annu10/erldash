@@ -12,7 +12,6 @@ var globalAppTag ="all";
 var globalHealthTag = "bad";//default bad health to render only problematic nodes on load,later you can select any
 var globalApplicationNames = [];
 var healthTagList = ["all","bad","good","exited"];
-var globalAutoRefreshSeconds = 30;
 
 var offSetVar ={
   top: 0,
@@ -120,7 +119,6 @@ class HealthDashBoardComponent extends React.Component {
     }
 
     getHealthMonInfo() {
-      console.log("api hit check!!! ");
       var treeData;
       //http://localhost:8181/healthmon/information
       var url = "healthmon/information";
@@ -180,7 +178,6 @@ class HealthDashBoardComponent extends React.Component {
 
     handleQrySubmit(e) {
       if(this.state.enableQry){
-        console.log("qry was"+e.target.elements.qry.value);
       this.setState({
         qryString:  e.target.elements.qry.value
       });
@@ -191,7 +188,7 @@ class HealthDashBoardComponent extends React.Component {
 
     handleAutoRefresh(){
       if(!this.state.auto_refresh){
-        this.timer = setInterval(()=> this.getHealthMonInfo(), this.state.auto_refresh*1000);
+        this.timer = setInterval(()=> this.getHealthMonInfo(), this.state.auto_refresh_seconds *1000);
       }else{
         this.timer = clearInterval(this.timer);
       }
@@ -205,7 +202,6 @@ class HealthDashBoardComponent extends React.Component {
       if(this.state.auto_refresh){
         this.timer = clearInterval(this.timer);
         this.timer = setInterval(()=> this.getHealthMonInfo(),  e.target.elements.auto_refresh_seconds.value*1000);
-      console.log("new refresh seconds was"+e.target.elements.auto_refresh_seconds.value);
       this.setState({
         auto_refresh_seconds:  e.target.elements.auto_refresh_seconds.value
       });
@@ -594,7 +590,6 @@ class TreeNodeToolTip extends React.Component{
 
 function  getApplicationInfo(){
     var url = "healthmon/which_applications";
-    console.log("url was "+url);
     fetch(url,{mode : "no-cors", method:"GET" })
       .then(res => res.json())
       .then(
