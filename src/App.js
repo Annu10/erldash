@@ -15,7 +15,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Health DashBoard
+          Health Dashboard
         </a>
         <a
           className="App-link"

@@ -48,12 +48,21 @@ const nodeSizeVar = {
   y :210//140
 }
 
-const svgShapeRectBlue = {
+// const svgShapeRectBlue = {
+//   shape : 'rect',
+//   shapeProps: {
+//     width: 10,
+//     height: 8,
+//     fill: 'blue' // "#00A86B"
+//   }
+// }
+
+const svgShapeRectGreen = {
   shape : 'rect',
   shapeProps: {
     width: 10,
     height: 8,
-    fill: 'blue' // "#00A86B"
+    fill: 'green' // "#00A86B"
   }
 }
 
@@ -64,6 +73,15 @@ const svgShapeCircleBlue = {
     fill :'blue'
   }
 }
+
+const svgShapeCircleGreen = {
+  shape : 'circle', // making a leaf node shape-default ie. circle
+  shapeProps: {
+    r: 5,
+    fill :'green'
+  }
+}
+
 const svgShapeCircleRed = {
   shape : 'circle', // making a leaf node shape-default ie. circle
   shapeProps: {
@@ -92,7 +110,7 @@ const emptyTree =[{
     app_name :"undefined", pid : "undefined", health :"good", node : "undefined", update_time : "", current_function : "",
     type : "system", stack_size : "", reductions : "", total_heap_size : "", message_queue_len : "", namespace : "universal"
   },
-  nodeSvgShape : svgShapeCircleBlue
+  nodeSvgShape : svgShapeCircleGreen
 }]
 
 class HealthDashBoardComponent extends React.Component {
@@ -121,14 +139,14 @@ class HealthDashBoardComponent extends React.Component {
     getHealthMonInfo() {
       var treeData;
       //http://localhost:8181/healthmon/information
-      var url = "healthmon/information";
+      var url = "healthmon/api/information";
       if(globalAppTag !=="all"){
         url = url +"?app="+globalAppTag;
       }
       if(globalHealthTag !=="all" && globalAppTag!=="all"){
         url = url +"&health="+globalHealthTag;
       }else if(globalHealthTag !=="all" && globalAppTag==="all"){
-        url = "healthmon/information?health="+globalHealthTag;
+        url = "healthmon/api/information?health="+globalHealthTag;
       }
 
       fetch(url,{mode : "no-cors", method:"GET" })
@@ -248,10 +266,10 @@ class HealthDashBoardComponent extends React.Component {
                           />
 
                         {' '}
-                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health DashBoard</b></a>
+                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health Dashboard</b></a>
                         <ReactTooltip id='appTips' type='info' effect='solid' place ='bottom' clickable={true} delayHide={300}>
                         <div style={{marginLeft: "35%"}}>
-                          <p>Health DashBoard Tool Tips</p>
+                          <p>Health Dashboard Tool Tips</p>
 
                               <li>Select App to filter tree for specific apps</li>
                               <li>Select Health to filter tree for specific health</li>
@@ -564,12 +582,12 @@ class TreeNodeToolTip extends React.Component{
       shapeVar = svgShapeRectRed;
     }
     else if(childrenVar.length ==0 && !isBadHealth){
-      shapeVar = svgShapeCircleBlue;
+      shapeVar = svgShapeCircleGreen;
     }else if(childrenVar.length ==0 && isBadHealth){
       shapeVar = svgShapeCircleRed;
     }
     else{
-      shapeVar = svgShapeRectBlue;
+      shapeVar = svgShapeRectGreen;
     }
     if(attributesVar ===[]){
       root = {
@@ -589,7 +607,7 @@ class TreeNodeToolTip extends React.Component{
 
 
 function  getApplicationInfo(){
-    var url = "healthmon/which_applications";
+    var url = "healthmon/api/which_applications";
     fetch(url,{mode : "no-cors", method:"GET" })
       .then(res => res.json())
       .then(
