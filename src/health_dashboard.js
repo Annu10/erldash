@@ -32,7 +32,6 @@ const toolTipContentStyle ={
   overflowY :"auto",
   top: 38,
   zIndex : 2
-  //top: 0
 };
 
 const zoomExtent ={
@@ -45,22 +44,23 @@ const nodeSizeVar = {
   y :210//140
 }
 
-const svgShapeRectBlue = {
+const svgShapeRectGreen = {
   shape : 'rect',
   shapeProps: {
     width: 10,
     height: 8,
-    fill: 'blue' // "#00A86B"
+    fill: 'green' // "#00A86B"
   }
 }
 
-const svgShapeCircleBlue = {
+const svgShapeCircleGreen = {
   shape : 'circle', // making a leaf node shape-default ie. circle
   shapeProps: {
     r: 5,
-    fill :'blue'
+    fill :'green'
   }
 }
+
 const svgShapeCircleRed = {
   shape : 'circle', // making a leaf node shape-default ie. circle
   shapeProps: {
@@ -89,7 +89,7 @@ const emptyTree =[{
     app_name :"undefined", pid : "undefined", health :"good", node : "undefined", update_time : "", current_function : "",
     type : "system", stack_size : "", reductions : "", total_heap_size : "", message_queue_len : "", namespace : "universal"
   },
-  nodeSvgShape : svgShapeCircleBlue
+  nodeSvgShape : svgShapeCircleGreen
 }]
 
 class HealthDashBoardComponent extends React.Component {
@@ -118,14 +118,14 @@ class HealthDashBoardComponent extends React.Component {
     getHealthMonInfo() {
       var treeData;
       //http://localhost:8181/healthmon/information
-      var url = "healthmon/information";
+      var url = "healthmon/api/information";
       if(globalAppTag !=="all"){
         url = url +"?app="+globalAppTag;
       }
       if(globalHealthTag !=="all" && globalAppTag!=="all"){
         url = url +"&health="+globalHealthTag;
       }else if(globalHealthTag !=="all" && globalAppTag==="all"){
-        url = "healthmon/information?health="+globalHealthTag;
+        url = "healthmon/api/information?health="+globalHealthTag;
       }
 
       fetch(url,{mode : "no-cors", method:"GET" })
@@ -222,14 +222,14 @@ class HealthDashBoardComponent extends React.Component {
          return (<option >{app_name}</option>);
      });
 
-     app_list_var =(<Form inline>Select App:<select className="form-control" onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select></Form>);
+     app_list_var =(<Form inline>App:<select className="form-control" onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select></Form>);
      var healthListExpectSelected =  Object.keys(healthTagList).map(function(key) {
        var health = healthTagList[key];
        if(health!==globalHealthTag){
        return (<option >{health}</option>);
        }
    });
-     health_list_var =(<Form inline>Select Health:<select className="form-control"  onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
+     health_list_var =(<Form inline>Health:<select className="form-control"  onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
      </select></Form>);
 
       appHeader   = (<div  >
@@ -245,10 +245,10 @@ class HealthDashBoardComponent extends React.Component {
                           />
 
                         {' '}
-                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health DashBoard</b></a>
+                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health Dashboard</b></a>
                         <ReactTooltip id='appTips' type='info' effect='solid' place ='bottom' clickable={true} delayHide={300}>
                         <div style={{marginLeft: "35%"}}>
-                          <p>Health DashBoard Tool Tips</p>
+                          <p>Health Dashboard Tool Tips</p>
 
                               <li>Select App to filter tree for specific apps</li>
                               <li>Select Health to filter tree for specific health</li>
@@ -260,7 +260,7 @@ class HealthDashBoardComponent extends React.Component {
                               disable Query to clear it
                               </li>
                               <li>Red Nodes indicate node or its any subtree in bad health</li>
-                              <li>Blue Nodes indicate node and all its subtrees in good health</li>
+                              <li>Green Nodes indicate node and all its subtrees in good health</li>
                               <li>Rectangular nodes have children, circular nodes are leaf</li>
                               <li>Hover on Node Name to see more details of the node</li>
                               <li>Click on nodes to expand/collapse immediate children</li>
@@ -560,12 +560,12 @@ class TreeNodeToolTip extends React.Component{
       shapeVar = svgShapeRectRed;
     }
     else if(childrenVar.length ===0 && !isBadHealth){
-      shapeVar = svgShapeCircleBlue;
+      shapeVar = svgShapeCircleGreen;
     }else if(childrenVar.length ===0 && isBadHealth){
       shapeVar = svgShapeCircleRed;
     }
     else{
-      shapeVar = svgShapeRectBlue;
+      shapeVar = svgShapeRectGreen;
     }
     if(attributesVar ===[]){
       root = {
@@ -585,7 +585,7 @@ class TreeNodeToolTip extends React.Component{
 
 
 function  getApplicationInfo(){
-    var url = "healthmon/which_applications";
+    var url = "healthmon/api/which_applications";
     fetch(url,{mode : "no-cors", method:"GET" })
       .then(res => res.json())
       .then(
