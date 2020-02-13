@@ -1,11 +1,8 @@
 import React from 'react'
 import Tree from 'react-d3-tree';
 import ReactTooltip from 'react-tooltip'
-import {Navbar,Nav,Form, FormControl,Dropdown} from 'react-bootstrap';
-import './App.css';
+import {Navbar,Nav,Form, FormControl} from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
-import "../src/css/health_dash_styles.css";
 
 var globalNumOfFetch =0;
 var globalAppTag ="all";
@@ -238,7 +235,7 @@ class HealthDashBoardComponent extends React.Component {
       appHeader   = (<div  >
 
                       <>
-                      <Navbar fixed="top" bg="light" variant="light">
+                      <Navbar fixed="top"   variant="light" style={{backgroundColor: "#f08a06", color:"white"}}>
 
                           <img
                             src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQWAWqPmdtL6dMyCKwd1ERaMy0RNfq0mCstFd5nygEseVExLdXd"
@@ -282,16 +279,16 @@ class HealthDashBoardComponent extends React.Component {
                   ref="enableQry"
                   onChange= {this.handleQryEnable} />Enable Query
                           <FormControl type="text" placeholder ={this.state.qryString} name="qry"/>
-                          <FormControl  variant="outline-primary" type="submit" value="Search Subtree"/>
+                          <FormControl  disabled={!this.state.enableQry} variant="outline-primary" type="submit" value="Search Subtree"/>
                         </Form>
-                        <Form inline onSubmit={this.handleAutoRefreshReset} disabled={!this.auto_refresh? "disabled" : false}>
+                        <Form inline onSubmit={this.handleAutoRefreshReset} >
                         <input  type="checkbox"
                           checked={this.state.auto_refresh}
                           ref="auto_refresh"
                           onChange= {this.handleAutoRefresh} />
                         Auto Refresh
-                          <FormControl className="form-group col-lg-3 " width ="30px"type="number" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
-                          <FormControl  variant="outline-primary" type="submit" value="Set"/>
+                          <FormControl className="form-group col-lg-3 " width ="30px"type="number" min ="10" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
+                          <FormControl disabled={!this.state.auto_refresh} variant="outline-primary" type="submit" value="Set"/>
                           </Form>
                         </Nav>
                       </Navbar>
@@ -305,7 +302,7 @@ class HealthDashBoardComponent extends React.Component {
       if(supTreeData !== false){
       var rawTreeJson = convertToJson(supTreeData);
       var finalD3Tree = getEnhancedD3Tree(rawTreeJson, qryString);
-      if(finalD3Tree.length==0 || typeof finalD3Tree==="undefined"){
+      if(finalD3Tree.length ===0 || typeof finalD3Tree==="undefined"){
         //empty tree result
         finalD3Tree = emptyTree;
       }
@@ -360,7 +357,7 @@ function getEnhancedD3Tree(InputJson, qry){
   }
   Object.keys(InputJson).forEach(function(key) {
     var value = InputJson[key];
-    if(qry ==""){
+    if(qry ===""){
       result.push(transformTreeJsonToD3TreeObject(value));
     }
     else{
@@ -394,7 +391,6 @@ class NodeLabel extends React.PureComponent {
             app_name: {nodeData.attributes.app_name}<br/>
             pid: {nodeData.attributes.pid}<br/>
             health: {nodeData.attributes.health}<br/>
-            node: {nodeData.attributes.node}<br/>
         </div>
       </div>
     )
@@ -409,7 +405,7 @@ TODO has  problem of self node update within library
 
 //TODO...not using this but may use
 function expandOrCollapseAll(nodeData){
-  if(nodeData._collapsed==true){
+  if(nodeData._collapsed ===true){
     expandAllSubTree(nodeData);
   }
   else{
@@ -563,9 +559,9 @@ class TreeNodeToolTip extends React.Component{
     if(isBadHealth && childrenVar.length !==0){
       shapeVar = svgShapeRectRed;
     }
-    else if(childrenVar.length ==0 && !isBadHealth){
+    else if(childrenVar.length ===0 && !isBadHealth){
       shapeVar = svgShapeCircleBlue;
-    }else if(childrenVar.length ==0 && isBadHealth){
+    }else if(childrenVar.length ===0 && isBadHealth){
       shapeVar = svgShapeCircleRed;
     }
     else{
