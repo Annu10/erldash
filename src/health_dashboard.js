@@ -31,7 +31,7 @@ const toolTipContentStyle ={
   fontFamily: "Arial",
   overflowY :"auto",
   top: 38,
-  zIndex : 2
+  zIndex : 1
 };
 
 const zoomExtent ={
@@ -41,7 +41,7 @@ const zoomExtent ={
 
 const nodeSizeVar = {
   x : 220, //
-  y :210//140
+  y :150//210//
 }
 
 const svgShapeRectGreen = {
@@ -49,7 +49,7 @@ const svgShapeRectGreen = {
   shapeProps: {
     width: 10,
     height: 8,
-    fill: 'green' // "#00A86B"
+    fill: "#D0F0C0" //green variant
   }
 }
 
@@ -57,7 +57,7 @@ const svgShapeCircleGreen = {
   shape : 'circle', // making a leaf node shape-default ie. circle
   shapeProps: {
     r: 5,
-    fill :'green'
+    fill :"#D0F0C0" // green variant
   }
 }
 
@@ -317,9 +317,9 @@ class HealthDashBoardComponent extends React.Component {
                           render: <NodeLabel className='TreeNodeToolTip' />,
                           foreignObjectWrapper: {
                             y:0,
-                            x:-90 //controls alignment of foreignObject Nodes with respect to the node
-                            //height : 100,
-                            //width :100
+                            x: -170, //controls alignment of foreignObject Nodes with respect to the node
+                            height :"500px",
+                            width: "350px"
                           }
                         }}
                 ></Tree>
@@ -373,20 +373,16 @@ function getEnhancedD3Tree(InputJson, qry){
 
 //for foreignObject of TreeNodes
 class NodeLabel extends React.PureComponent {
+
   render() {
-    const {className, nodeData} = this.props
+
+    const {className, nodeData} = this.props;
     return (
       <div>
-        <TreeNodeToolTip id={nodeData.id}
-        namespace ={nodeData.attributes.namespace} type ={nodeData.attributes.type}
-        health = {nodeData.attributes.health} name = {nodeData.name}
-        current_function = {nodeData.attributes.current_function}
-        reductions = {nodeData.attributes.reductions}
-        stack_size = {nodeData.attributes.stack_size}
-        total_heap_size = {nodeData.attributes.total_heap_size}
-        update_time = {nodeData.attributes.update_time}
-        message_queue_len = {nodeData.attributes.message_queue_len}
+        <TreeNodeToolTip id={nodeData.id} data= {nodeData.attributes}
+        name = {nodeData.name}
         />
+
             <div style ={treeNodeStyle}>
             app_name: {nodeData.attributes.app_name}<br/>
             pid: {nodeData.attributes.pid}<br/>
@@ -397,70 +393,29 @@ class NodeLabel extends React.PureComponent {
   }
 }
 
-/*
-TODO has  problem of self node update within library
-       {nodeData._children  &&
-          <button onClick ={expandOrCollapseAll(nodeData)}>{nodeData._collapsed ? '+' : '-'}</button>}
-*/
-
-//TODO...not using this but may use
-function expandOrCollapseAll(nodeData){
-  if(nodeData._collapsed ===true){
-    expandAllSubTree(nodeData);
-  }
-  else{
-    //nodeData._collapsed =true;
-    collapseAllSubTree(nodeData);
-
-  }
-}
-function expandAllSubTree(nodeData){
-  nodeData._collapsed =false;
-    if(nodeData._children){
-    nodeData._children.forEach(function(d) {
-      d._collapsed = false;
-      expandAllSubTree(d);
-    });
-    }
-}
-
-function collapseAllSubTree(nodeData){
-  nodeData._collapsed =true;
-  if(nodeData._children){
-  nodeData._children.forEach(function(d) {
-    d._collapsed = true;
-    collapseAllSubTree(d);
-  });
-  }
-
-}
-
 class TreeNodeToolTip extends React.Component{
   constructor(props){
     super();
-    this.state = { name: props.name ,health : props.health,id : props.id, namespace :props.namespace,
-    type :props.type, current_function: props.current_function, reductions: props.reductions, stack_size: props.stack_size,
-    total_heap_size: props.total_heap_size, update_time: props.update_time, message_queue_len: props.message_queue_len
+    this.state = { name: props.name ,id : props.id,
+    data : props.data
     };
     }
 
   render() {
+    var data = this.state.data;
     var name = this.state.name;
-    var health = this.state.health;
     var id = this.state.id;
-    var namespace = this.state.namespace;
-    var type = this.state.type;
-    var current_function = this.state.current_function;
-    var reductions = this.state.reductions;
-    var stack_size = this.state.stack_size;
-    var total_heap_size = this.state.total_heap_size;
-    var update_time = this.state.update_time;
-    var message_queue_len = this.state.message_queue_len;
+    var toolTipData= "";
+    if(typeof data !== "undefined" ){
+      toolTipData = Object.keys(data).sort().map(function(key) {
+        if(key!=="health" && key!=="pid" && key!=="app_name"){
+          var value = data[key];
+          return (<li >{key}: {value}</li>);
+        }
+        });
+    }
 
     var toolType ='info';
-    if(health !== "good"){
-      toolType = 'error'
-    }
     return (
     <div>
       <b><p style={{textAlign: 'center'}}><a data-tip data-for={id}> {name}</a></p></b>
@@ -468,12 +423,7 @@ class TreeNodeToolTip extends React.Component{
           <ReactTooltip  data-offset={offSetVar}
           delayHide={300}  clickable ={true} type={toolType} scrollHide ={true} effect='solid' place ='bottom' id={id}>
           <div style ={toolTipContentStyle}>
-            <li>update_time:{update_time}</li>
-            <li>current_function:{current_function}</li>
-            <li>type:{type} ,stack_size: {stack_size}, reductions:{reductions}</li>
-            <li>total_heap_size: {total_heap_size}</li>
-            <li>message_queue_len: {message_queue_len}</li>
-            <li>namespace: {namespace}</li>
+            {toolTipData}
           </div>
           </ReactTooltip>
     </div>
@@ -502,10 +452,11 @@ class TreeNodeToolTip extends React.Component{
     var isAnySubTreeRelevant = false;
     var nameVar = InputJson.name;
     var appNameVar =InputJson.attributes.app_name;
+    var pid = InputJson.attributes.pid;
     if(typeof InputJson.children !== "undefined"){
       Object.keys(InputJson.children).forEach(function(key) {
         var value = InputJson.children[key];
-        if(nameVar.includes(qry) || appNameVar.includes(qry)){
+        if(nameVar.includes(qry) || appNameVar.includes(qry) || pid.includes(qry)){
           //qry node found,now get all children of this node
           childrenVar.push(transformTreeJsonToD3TreeObject(value));
           isAnySubTreeRelevant = true;
@@ -522,7 +473,7 @@ class TreeNodeToolTip extends React.Component{
         }
       });
     }
-    if(nameVar.includes(qry) || isAnySubTreeRelevant || appNameVar.includes(qry)){
+    if(nameVar.includes(qry) || isAnySubTreeRelevant || appNameVar.includes(qry) || pid.includes(qry)){
       root = makeD3TreeNode(InputJson, childrenVar);
       return root;
     }else{
@@ -536,20 +487,7 @@ class TreeNodeToolTip extends React.Component{
     var attributesVar = {};
     var isBadHealth = false;
     if(typeof InputJson.attributes !== "undefined"){
-      attributesVar =  {
-        pid: InputJson.attributes.pid,
-        name: InputJson.attributes.name,
-        app_name: InputJson.attributes.app_name,
-        node: InputJson.attributes.node,
-        namespace : InputJson.attributes.namespace,
-        type: InputJson.attributes.type,
-        health: InputJson.attributes.health,
-        current_function: InputJson.attributes.current_function,
-        reductions: InputJson.attributes.reductions,
-        stack_size: InputJson.attributes.stack_size,
-        total_heap_size: InputJson.attributes.total_heap_size,
-        update_time: InputJson.attributes.update_time
-      }
+      attributesVar = InputJson.attributes;
       if(InputJson.attributes.health !== "good"){
         isBadHealth = true;
       }
