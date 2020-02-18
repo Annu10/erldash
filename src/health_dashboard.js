@@ -10,10 +10,13 @@ var globalHealthTag = "bad";//default bad health to render only problematic node
 var globalApplicationNames = [];
 var healthTagList = ["all","bad","good","exited"];
 
+var globalVmIp ="localhost";//default on load localhost,later you can change
+var globalRequestOptions = {method:"GET"};
 var offSetVar ={
   top: 0,
   left : 0
 }
+var enableVmSet =true;
 
 const treeNodeStyle ={
   color: "Black",
@@ -40,8 +43,8 @@ const zoomExtent ={
 }
 
 const nodeSizeVar = {
-  x : 220, //
-  y :150//210//
+  x : 220,
+  y :150
 }
 
 const svgShapeRectGreen = {
@@ -96,7 +99,7 @@ class HealthDashBoardComponent extends React.Component {
   constructor() {
     super();
     this.state = { supTreeData: false ,enableQry :false, qryString : "", auto_refresh:false,
-    auto_refresh_seconds : 30
+    auto_refresh_seconds : 30, vmIp : "localhost"
     };
     this.qryString2 = React.createRef();
     this.getHealthMonInfo = this.getHealthMonInfo.bind(this);
@@ -106,6 +109,7 @@ class HealthDashBoardComponent extends React.Component {
     this.handleAutoRefresh = this.handleAutoRefresh.bind(this);
     this.handleQrySubmit = this.handleQrySubmit.bind(this);
     this.handleAutoRefreshReset = this.handleAutoRefreshReset.bind(this);
+    this.handleVmReset = this.handleVmReset.bind(this);
     }
 
     componentDidUpdate() {
@@ -118,17 +122,17 @@ class HealthDashBoardComponent extends React.Component {
     getHealthMonInfo() {
       var treeData;
       //http://localhost:8181/healthmon/information
-      var url = "healthmon/api/information";
+      var url = getBaseUrl()+"information";
       if(globalAppTag !=="all"){
         url = url +"?app="+globalAppTag;
       }
       if(globalHealthTag !=="all" && globalAppTag!=="all"){
         url = url +"&health="+globalHealthTag;
       }else if(globalHealthTag !=="all" && globalAppTag==="all"){
-        url = "healthmon/api/information?health="+globalHealthTag;
+        url = url + "?health="+globalHealthTag;
       }
 
-      fetch(url,{mode : "no-cors", method:"GET" })
+      fetch(url,{globalRequestOptions})
         .then(res => res.json())
         .then(
           (result) => {
@@ -207,6 +211,14 @@ class HealthDashBoardComponent extends React.Component {
 
     }
 
+    handleVmReset(e) {
+      this.setState({
+        vmIp:  e.target.elements.vm.value
+      });
+      e.preventDefault();
+      globalVmIp = e.target.elements.vm.value;
+    }
+
 
   render() {
       //on load only, after that depending on refresh interval or filter/query etc
@@ -235,12 +247,12 @@ class HealthDashBoardComponent extends React.Component {
       appHeader   = (<div  >
 
                       <>
-                      <Navbar fixed="top"   variant="light" style={{backgroundColor: "#f08a06", color:"white"}}>
+                      <Navbar fixed="top" variant="light" style={{backgroundColor: "#f08a06", color:"white"}}>
 
                           <img
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcQWAWqPmdtL6dMyCKwd1ERaMy0RNfq0mCstFd5nygEseVExLdXd"
-                            width="20"
-                            height="20"
+                            src ="./gor_logo.png"
+                            width="30"
+                            height="30"
                             alt=""
                           />
 
@@ -250,15 +262,17 @@ class HealthDashBoardComponent extends React.Component {
                         <div style={{marginLeft: "35%"}}>
                           <p>Health Dashboard Tool Tips</p>
 
+                              <li>Current VM : {this.state.vmIp}</li>
                               <li>Select App to filter tree for specific apps</li>
                               <li>Select Health to filter tree for specific health</li>
-                              <li>Enable Query,input desired process name and hit
+                              <li>Enable Query,input pid/process/app name and hit
                                 Search Subtree to get branches of that process <br/>
-                                to get branches of that process
+                                to get branches of that process only
                               </li>
                               <li>
                               disable Query to clear it
                               </li>
+                              <li>Set Vm Ip to view specific vm process info</li>
                               <li>Red Nodes indicate node or its any subtree in bad health</li>
                               <li>Green Nodes indicate node and all its subtrees in good health</li>
                               <li>Rectangular nodes have children, circular nodes are leaf</li>
@@ -268,7 +282,7 @@ class HealthDashBoardComponent extends React.Component {
 
                             </div>
                           </ReactTooltip></Navbar.Brand>
-   <Nav>
+                    <Nav>
                   {app_list_var}
 
                   {health_list_var}
@@ -277,19 +291,25 @@ class HealthDashBoardComponent extends React.Component {
                         <input type="checkbox"
                   checked={this.state.enableQry}
                   ref="enableQry"
-                  onChange= {this.handleQryEnable} />Enable Query
-                          <FormControl type="text" placeholder ={this.state.qryString} name="qry"/>
-                          <FormControl  disabled={!this.state.enableQry} variant="outline-primary" type="submit" value="Search Subtree"/>
+                  onChange= {this.handleQryEnable} />
+                          <FormControl type="text"  placeholder ={this.state.qryString} name="qry"/>
+                          <FormControl  disabled={!this.state.enableQry} variant="outline-primary" type="submit" value="Query"></FormControl>
+
                         </Form>
-                        <Form inline onSubmit={this.handleAutoRefreshReset} >
+                        <Form inline style ={{marginRight:"0px", marginRight:"0px"}}  onSubmit={this.handleAutoRefreshReset}>
                         <input  type="checkbox"
                           checked={this.state.auto_refresh}
                           ref="auto_refresh"
                           onChange= {this.handleAutoRefresh} />
                         Auto Refresh
                           <FormControl className="form-group col-lg-3 " width ="30px"type="number" min ="10" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
-                          <FormControl disabled={!this.state.auto_refresh} variant="outline-primary" type="submit" value="Set"/>
+                          <FormControl disabled={!this.state.auto_refresh} className="form-group col-lg-3 " variant="outline-primary" type="submit" value="Set"/>
                           </Form>
+                          <Form inline onSubmit={this.handleVmReset}>
+                          <FormControl className="form-group col-lg-6 " type="text" placeholder ={this.state.vmIp} name="vm"/>
+                          <FormControl disabled={!enableVmSet} variant="outline-primary" type="submit" value="Set VM"/>
+                          </Form>
+
                         </Nav>
                       </Navbar>
                     </>
@@ -523,8 +543,8 @@ class TreeNodeToolTip extends React.Component{
 
 
 function  getApplicationInfo(){
-    var url = "healthmon/api/which_applications";
-    fetch(url,{mode : "no-cors", method:"GET" })
+    var url = getBaseUrl() +"which_applications";
+    fetch(url,globalRequestOptions)
       .then(res => res.json())
       .then(
         (result) => {
@@ -540,5 +560,19 @@ function  getApplicationInfo(){
       )
 
   }
+
+function getBaseUrl(){
+  var url;
+  if(process.env.REACT_APP_HDB_PROXY =="ENABLED"){
+    url = "healthmon/api/";
+    globalRequestOptions ={mode : "no-cors",method: "GET"};
+    enableVmSet =false;
+  }
+  else{
+    url = "http://"+globalVmIp+":8181/healthmon/api/";
+    globalRequestOptions ={method: "GET"};
+  }
+  return url;
+}
 
 export default HealthDashBoardComponent
