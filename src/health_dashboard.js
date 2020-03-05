@@ -1,7 +1,7 @@
 import React from 'react'
 import Tree from 'react-d3-tree';
 import ReactTooltip from 'react-tooltip'
-import {Navbar,Nav,Form, FormControl} from 'react-bootstrap';
+import {Navbar,Nav,Form, FormControl, FormGroup} from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 var globalNumOfFetch =0;
@@ -234,20 +234,20 @@ class HealthDashBoardComponent extends React.Component {
          return (<option >{app_name}</option>);
      });
 
-     app_list_var =(<Form inline>App:<select className="form-control" onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select></Form>);
+     app_list_var =(<Form   inline ><FormGroup>App:<select style ={{width:"35%"}}className="form-control" onChange = {this.handleAppFilter}><option>all</option>{app_names_var}</select></FormGroup></Form>);
      var healthListExpectSelected =  Object.keys(healthTagList).map(function(key) {
        var health = healthTagList[key];
        if(health!==globalHealthTag){
        return (<option >{health}</option>);
        }
    });
-     health_list_var =(<Form inline>Health:<select className="form-control"  onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
-     </select></Form>);
+     health_list_var =(<Form  style={{ marginLeft:"1%",marginRight:"2%"}} inline><FormGroup style={{marginLeft:"1%"}}>Health:<select style ={{width:"55%"}} className="form-control"  onChange = {this.handleHealthFilter}><option>{globalHealthTag}</option>{healthListExpectSelected}
+     </select></FormGroup></Form>);
 
       appHeader   = (<div  >
 
                       <>
-                      <Navbar fixed="top" variant="light" style={{backgroundColor: "#f08a06", color:"white"}}>
+                      <Navbar fixed="top" variant="light" style={{backgroundColor: "#f08a06", color:"white"}} >
 
                           <img
                             src ="./gor_logo.png"
@@ -257,7 +257,7 @@ class HealthDashBoardComponent extends React.Component {
                           />
 
                         {' '}
-                        <Navbar.Brand><a data-tip data-for='appTips'><b>Health Dashboard</b></a>
+                        <Navbar.Brand ><a data-tip data-for='appTips'><b>Health Dashboard</b></a>
                         <ReactTooltip id='appTips' type='info' effect='solid' place ='bottom' clickable={true} delayHide={300}>
                         <div style={{marginLeft: "35%"}}>
                           <p>Health Dashboard Tool Tips</p>
@@ -266,12 +266,13 @@ class HealthDashBoardComponent extends React.Component {
                               <li>Select App to filter tree for specific apps</li>
                               <li>Select Health to filter tree for specific health</li>
                               <li>Enable Query,input pid/process/app name and hit
-                                Search Subtree to get branches of that process <br/>
+                                Search Query to get branches of that process <br/>
                                 to get branches of that process only
                               </li>
                               <li>
                               disable Query to clear it
                               </li>
+                              <li>Click Auto refresh after enabling and entering no. of seconds</li>
                               <li>Set Vm Ip to view specific vm process info</li>
                               <li>Red Nodes indicate node or its any subtree in bad health</li>
                               <li>Green Nodes indicate node and all its subtrees in good health</li>
@@ -282,32 +283,40 @@ class HealthDashBoardComponent extends React.Component {
 
                             </div>
                           </ReactTooltip></Navbar.Brand>
-                    <Nav>
+                    <Nav >
                   {app_list_var}
 
                   {health_list_var}
 
-                        <Form inline onSubmit={this.handleQrySubmit} disabled={!this.enableQry? "disabled" : false}>
+
+                        <Form  style={{marginLeft:"2%",marginRight:"2%" }} inline onSubmit={this.handleQrySubmit} disabled={!this.enableQry? "disabled" : false}>
+                        <FormGroup style={{marginLeft:"1%"}}>
                         <input type="checkbox"
                   checked={this.state.enableQry}
                   ref="enableQry"
                   onChange= {this.handleQryEnable} />
-                          <FormControl type="text"  placeholder ={this.state.qryString} name="qry"/>
+                          <FormControl  type="text"  placeholder ={this.state.qryString} name="qry"/>
                           <FormControl  disabled={!this.state.enableQry} variant="outline-primary" type="submit" value="Query"></FormControl>
-
+                          </FormGroup>
                         </Form>
-                        <Form inline style ={{marginRight:"0px", marginRight:"0px"}}  onSubmit={this.handleAutoRefreshReset}>
+
+                        <Form   style={{ marginLeft:"7%",marginRight:"0%"}} inline  onSubmit={this.handleAutoRefreshReset}>
+                        <FormGroup >
                         <input  type="checkbox"
                           checked={this.state.auto_refresh}
                           ref="auto_refresh"
                           onChange= {this.handleAutoRefresh} />
-                        Auto Refresh
-                          <FormControl className="form-group col-lg-3 " width ="30px"type="number" min ="10" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
-                          <FormControl disabled={!this.state.auto_refresh} className="form-group col-lg-3 " variant="outline-primary" type="submit" value="Set"/>
+
+                          <FormControl className="form-group col-lg-3 " style ={{width:"30%"}} type="number" min ="10" placeholder ={this.state.auto_refresh_seconds} name="auto_refresh_seconds"/>
+                          <FormControl disabled={!this.state.auto_refresh}  className="form-group col-lg-5 " variant="outline-primary" type="submit" value="Auto Refresh"/>
+                          </FormGroup>
                           </Form>
-                          <Form inline onSubmit={this.handleVmReset}>
-                          <FormControl className="form-group col-lg-6 " type="text" placeholder ={this.state.vmIp} name="vm"/>
-                          <FormControl disabled={!enableVmSet} variant="outline-primary" type="submit" value="Set VM"/>
+
+                          <Form   style={{marginLeft:"0px", marginRight:"0px"}} inline onSubmit={this.handleVmReset} >
+                          <FormGroup>
+                          <FormControl  className="form-group col-lg-6 " type="text" placeholder ={this.state.vmIp} name="vm"/>
+                          <FormControl  disabled={!enableVmSet} variant="outline-primary" type="submit" value="Set VM"/>
+                          </FormGroup>
                           </Form>
 
                         </Nav>
