@@ -10,7 +10,7 @@ var globalHealthTag = "bad";//default bad health to render only problematic node
 var globalApplicationNames = [];
 var healthTagList = ["all","bad","good","exited"];
 
-var globalVmIp ="localhost";//default on load localhost,later you can change
+var globalVmIp ="192.168.8.208";//default on load localhost,later you can change
 var globalRequestOptions = {method:"GET"};
 var offSetVar ={
   top: 0,
@@ -99,7 +99,7 @@ class HealthDashBoardComponent extends React.Component {
   constructor() {
     super();
     this.state = { supTreeData: false ,enableQry :false, qryString : "", auto_refresh:false,
-    auto_refresh_seconds : 30, vmIp : "localhost"
+    auto_refresh_seconds : 30, vmIp : globalVmIp
     };
     this.qryString2 = React.createRef();
     this.getHealthMonInfo = this.getHealthMonInfo.bind(this);
@@ -217,6 +217,7 @@ class HealthDashBoardComponent extends React.Component {
       });
       e.preventDefault();
       globalVmIp = e.target.elements.vm.value;
+      this.getHealthMonInfo();
     }
 
 
